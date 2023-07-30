@@ -1,0 +1,27 @@
+version: '1'
+services:
+
+  mongoDB:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    healthcheck:
+     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+     interval: 10s
+     timeout: 10s
+     retries: 5
+     start_period: 40s
+
+  collection:
+    image: maluyvova/collection
+    links:
+      - mongoDB
+    restart: always
+    ports:
+      - 80:3000
+    environment:
+      MONGO_DATABASE_URL: mongodb://mongoDB:27017/?directConnection=true&serverSelectionTimeoutMS=2000
+    depends_on:
+      mongoDB:
+        condition: service_healthy
