@@ -1,0 +1,52 @@
+
+def customImage = 'initial_value'
+pipeline {
+    agent any
+    
+    // environment {
+    //     KUBECONFIG = '~/.kube/config'
+    // }
+
+    stages {
+        stage('Source') {
+            steps {
+                 git branch: 'main', credentialsId: 'github', url: 'https://github.com/maluyvova/wecloudTask8.git'
+            }
+        }
+      stage('Build') {
+            steps {
+                script{
+                dir("SelfProject") {
+                customImage = docker.build("maluyvova/collection")
+             
+                }
+            }
+            }
+        }
+        stage('Test') {
+            steps {
+                 echo "here should be some tests"
+            }
+        }
+        stage('Push') {
+            steps {
+                script{
+                 withDockerRegistry([ credentialsId: "docker", url: "" ]) {
+                 customImage.push()
+                 }
+                }
+            }
+        }
+       stage('Deploy') {
+            steps {
+                 dir("SelfProject") {
+                     withCredentials([file(credentialsId: '4c4dffb8-7e8b-49c7-b448-5b6ce05cc1b0', variable: 'KUBECRED')]) {
+                     sh 'cat $KUBECRED > ~/.kube/config'
+                     sh 'kubectl apply -f deploy.yaml'
+                      }
+                 }
+            }
+        }
+    }
+}
+
